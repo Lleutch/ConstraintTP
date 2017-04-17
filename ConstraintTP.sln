@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ConstraintTP", "ConstraintTP\ConstraintTP.fsproj", "{AFE1FC1F-9A0A-4325-B225-156BF6CF05E2}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{E89F75E9-7B56-4D51-9696-A6430C7E4379}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ConstraintTP", "src\ConstraintTP\ConstraintTP.fsproj", "{AFE1FC1F-9A0A-4325-B225-156BF6CF05E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
