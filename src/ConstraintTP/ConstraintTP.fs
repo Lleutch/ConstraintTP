@@ -2,6 +2,8 @@
 
 open FSharp.Core.CompilerServices
 open Microsoft.FSharp.Compiler.Interactive.Shell
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
 
@@ -26,13 +28,80 @@ module Fsi =
 
     let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
     let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream) 
+    let ensureCompilerServicesReady() =
+        //type providers are weird. compiler services is used heavily, but referencing it is not
+        //enough, as it depends where you are executing. If in VS and the user is using power tools
+        //or another extension that loads the compiler services, it will use that (assuming its a new enough version!)
+        //otherwise, we might have to load it ourself.  If this is executing in msbuild for example, or some other
+        //locaiton.
+//        AppDomain.CurrentDomain.GetAssemblies()
+//        |> Seq.filter(fun a -> a.FullName.StartsWith("FSharp"))
+//        |> Seq.map(fun a -> a.FullName)
+//        |> sprintf "ERROORR \n : %A"
+        let current = FileInfo(Assembly.GetExecutingAssembly().Location).Directory
+        Assembly.LoadFile(Path.Combine(current.FullName,"FSharp.Compiler.Service.dll")) |> ignore
+        Assembly.LoadFile(Path.Combine(current.FullName,"FSharp.Core.dll")) |> ignore
 
+//        |> failwith
+//        |> Seq.filter(fun a -> a.FullName.StartsWith("FSharp.Compiler.Service,"))
+//        |> Seq.isEmpty
+//        |> function 
+//            | true -> 
+//                // we can assume the compiler services will be alongside this dll.
+//                let current = FileInfo(Assembly.GetExecutingAssembly().Location).Directory
+//                Assembly.LoadFile(Path.Combine(current.FullName,"FSharp.Compiler.Service.dll")) |> ignore
+//            | _ -> ()
 
 module Rules =
     open Fsi
 
+    let getstuff (file,input) =
+//        failwith "it worked please1111!!!" 
+        ensureCompilerServicesReady()
+//        failwith "it worked please!!!" 
+        let projOptions = fsiSession.InteractiveChecker.GetProjectOptionsFromScript(file, input)
+//        failwith "it worked supper!!!" 
+        let proj = projOptions |> Async.RunSynchronously
+        failwith "it worked!!!" 
+        projOptions
+
+    let parseAndCheckSingleFile (input) = 
+        let file = Path.ChangeExtension(System.IO.Path.GetTempFileName(), "fsx")  
+        File.WriteAllText(file, input)
+        // Get context representing a stand-alone (script) file
+//        let projOptions =  
+//            checker.GetProjectOptionsFromScript(file, input)
+//            |> Async.RunSynchronously
+
+
+        let projOptions = getstuff(file,input)
+        failwith "it worked6!!!" 
+
+//        checker.ParseAndCheckProject(projOptions) 
+//        |> Async.RunSynchronously
+
+
+    let fstRule = "fun y (x: System.Int32 List) -> x.Length < y+3"
+    let sndRule = "fun y -> 3 < y + 1"
+
+
     /// Evaluate expression & return the result, strongly typed
     let evalExpressionRule<'a> (text) = 
+        let index = 0
+        let ruleFunction =
+            """fun x -> x < 3"""
+        let input = 
+            """
+        module MyLibrary 
+        open System
+            """ 
+        let foo = sprintf "let foo%i = %s" index ruleFunction
+        let singleFile = input + foo
+
+        // This is useless Here, but I am using just for testing
+        let checkProjectResults = parseAndCheckSingleFile(singleFile)
+        failwith "it worked3!!!" 
+//        let err = checkProjectResults.Errors 
         match fsiSession.EvalExpressionNonThrowing(text) with
         |Choice1Of2 fsiValue , errors ->
             if errors.Length = 0 then
